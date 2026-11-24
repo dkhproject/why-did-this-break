@@ -4,8 +4,8 @@
   "description": "Zero-dependency Git debugging CLI that traces any stack trace through git blame & git log -L and ranks the most likely breaking commits.",
   "main": "src/index.js",
   "bin": {
-    "why-did-this-break": "./bin/cli.js",
-    "why-broke": "./bin/cli.js"
+    "why-did-this-break": "bin/cli.js",
+    "why-broke": "bin/cli.js"
   },
   "type": "commonjs",
   "files": [
@@ -37,5 +37,13 @@
     "zero-dependencies"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dkhproject/why-did-this-break.git"
+  },
+  "homepage": "https://github.com/dkhproject/why-did-this-break#readme",
+  "bugs": {
+    "url": "https://github.com/dkhproject/why-did-this-break/issues"
+  }
 }
