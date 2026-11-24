@@ -6,6 +6,7 @@
 const { parseStackTrace } = require('./parser');
 const { verifyGitRepo, isGitRepo, getGitRoot, traceFrames } = require('./gitTracer');
 const { scoreCommits } = require('./scorer');
+const { formatReport } = require('./reporter');
 
 /**
  * Full analysis pipeline: parses stack trace, traces git commits, and scores suspects.
@@ -37,4 +38,5 @@ module.exports = {
   getGitRoot,
   traceFrames,
   scoreCommits,
+  formatReport,
 };

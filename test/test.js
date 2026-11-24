@@ -12,6 +12,7 @@ const path = require('path');
 const { parseStackTrace } = require('../src/parser');
 const { isGitRepo, getGitRoot, verifyGitRepo, traceFrames } = require('../src/gitTracer');
 const { scoreCommits, calculateCommitScore } = require('../src/scorer');
+const { formatReport, colorizeDiff } = require('../src/reporter');
 
 console.log('--- Starting why-did-this-break Test Suite ---');
 
@@ -217,10 +218,97 @@ TypeError: Cannot read properties of undefined (reading 'match')
   assert(cliFormattedOutput.includes('WHY DID THIS BREAK?'), 'CLI output should include header');
   assert(cliFormattedOutput.includes('RANKED SUSPECT COMMITS'), 'CLI output should include suspects');
   assert(cliFormattedOutput.includes(culpritCommit.shortHash), 'CLI output should display suspect hash');
+  assert(cliFormattedOutput.includes('QUICK ACTIONS'), 'CLI output should include Quick Actions box');
+  assert(cliFormattedOutput.includes(`git show ${culpritCommit.shortHash}`), 'Quick Actions should include git show');
+  assert(cliFormattedOutput.includes(`git revert ${culpritCommit.shortHash}`), 'Quick Actions should include git revert');
+  assert(cliFormattedOutput.includes('code -g auth.js:6'), 'Quick Actions should include code -g <file>:<line>');
 
   console.log('   ✓ Git Line Tracer and CLI successfully pinpointed the breaking commit.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
+
+// ==========================================
+// Test 4: Terminal Reporter & CLI Flags
+// ==========================================
+console.log('4. Testing Terminal Reporter & CLI Flags...');
+
+const sampleFrames = [
+  { file: 'src/auth.js', line: 6, method: 'verifyToken', frameIndex: 0 },
+  { file: 'src/auth.js', line: 3, method: 'authenticateUser', frameIndex: 1 },
+];
+
+const sampleSuspects = [1, 2, 3, 4].map((n) => ({
+  hash: `${n}aaa111122223333444455556666777788889999`,
+  shortHash: `${n}aaa111`,
+  score: 100 - (n - 1) * 20,
+  author: `Dev ${n} <dev${n}@test.com>`,
+  date: '2026-11-24T06:15:19Z',
+  relativeTime: `${n}h ago`,
+  message: `commit message ${n}`,
+  diff: `diff --git a/src/auth.js b/src/auth.js\n@@ -6,1 +6,1 @@\n-oldLine(${n})\n+newLine(${n})`,
+  reasons: [`Reason for suspect ${n}`],
+  framesTouched: [{ frameIndex: n === 1 ? 0 : 1, file: 'src/auth.js', line: n === 1 ? 6 : 3, isBlame: n === 1 }],
+}));
+
+const plainReport = formatReport(
+  { gitRoot: '/repo', frames: sampleFrames, suspects: sampleSuspects },
+  { color: false, showAll: false }
+);
+assert(!plainReport.includes('\x1b['), 'Plain report with color: false must not contain ANSI escapes');
+assert(plainReport.includes('#1 PRIME SUSPECT'), 'Should highlight #1 PRIME SUSPECT');
+assert(plainReport.includes('#2 [80/100 CRITICAL] 2aaa111'), 'Should show #2 in compact form');
+assert(plainReport.includes('#3 [60/100 HIGH] 3aaa111'), 'Should show #3 in compact form');
+assert(!plainReport.includes('4aaa111'), 'Default mode should hide suspect #4');
+assert(plainReport.includes('... and 1 more suspect. Run with --all'), 'Should display truncation notice');
+assert(plainReport.includes('git show 1aaa111'), 'Quick Actions should include git show');
+assert(plainReport.includes('git revert 1aaa111'), 'Quick Actions should include git revert');
+assert(plainReport.includes('code -g src/auth.js:6'), 'Quick Actions should include code -g');
+
+const allReport = formatReport(
+  { gitRoot: '/repo', frames: sampleFrames, suspects: sampleSuspects },
+  { color: false, showAll: true }
+);
+assert(allReport.includes('4aaa111'), '--all mode should include suspect #4');
+assert(allReport.includes('Reason for suspect 4'), '--all mode should show full details for suspect #4');
+assert(!allReport.includes('Run with --all'), '--all mode should not show truncation hint');
+
+const coloredReport = formatReport(
+  { gitRoot: '/repo', frames: sampleFrames, suspects: sampleSuspects },
+  { color: true, showAll: false }
+);
+assert(coloredReport.includes('\x1b[32m+newLine(1)'), 'Colored diff should style + lines green');
+assert(coloredReport.includes('\x1b[31m-oldLine(1)'), 'Colored diff should style - lines red');
+assert(coloredReport.includes('\x1b[1m\x1b[31m#1 PRIME SUSPECT'), 'Colored report should highlight #1 Prime Suspect in bold red');
+
+const diffColoredLines = colorizeDiff('+added\n-removed', true);
+assert(diffColoredLines[0].includes('\x1b[32m'), 'colorizeDiff should color + green');
+assert(diffColoredLines[1].includes('\x1b[31m'), 'colorizeDiff should color - red');
+
+// CLI flags checks (--help, --version, --all, FORCE_COLOR, NO_COLOR)
+const cliBin = path.resolve(__dirname, '../bin/cli.js');
+const helpOut = execSync(`node "${cliBin}" --help`, { encoding: 'utf8' });
+assert(helpOut.includes('--all'), '--help should document --all');
+assert(helpOut.includes('--json'), '--help should document --json');
+assert(helpOut.includes('--version'), '--help should document --version');
+
+const versionOut = execSync(`node "${cliBin}" --version`, { encoding: 'utf8' });
+assert(versionOut.trim().startsWith('why-did-this-break v'), '--version should output version string');
+
+const repoRoot = path.resolve(__dirname, '..');
+const forceColorOut = execSync(
+  `node "${cliBin}" --all "TypeError: Boom\n    at normalizeFilePath (src/parser.js:15:3)"`,
+  { cwd: repoRoot, env: { ...process.env, FORCE_COLOR: '1', NO_COLOR: '' }, encoding: 'utf8' }
+);
+assert(forceColorOut.includes('\x1b['), 'FORCE_COLOR=1 should emit ANSI color sequences');
+assert(forceColorOut.includes('QUICK ACTIONS'), 'CLI --all should include Quick Actions box');
+
+const noColorOut = execSync(
+  `node "${cliBin}" --all "TypeError: Boom\n    at normalizeFilePath (src/parser.js:15:3)"`,
+  { cwd: repoRoot, env: { ...process.env, FORCE_COLOR: '1', NO_COLOR: '1' }, encoding: 'utf8' }
+);
+assert(!noColorOut.includes('\x1b['), 'NO_COLOR=1 should disable ANSI color sequences even when FORCE_COLOR is set');
+
+console.log('   ✓ Terminal reporter, ANSI colors, Quick Actions, and CLI flags verified.');
 
 console.log('\nAll tests passed successfully!');

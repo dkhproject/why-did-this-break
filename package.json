@@ -1,12 +1,21 @@
 {
   "name": "why-did-this-break",
   "version": "1.0.0",
-  "description": "Smart git line tracer and suspect scoring engine for stack traces with zero dependencies",
+  "description": "Zero-dependency CLI that traces stack trace lines through Git history and ranks the most likely breaking commits.",
   "main": "src/index.js",
   "bin": {
-    "why-did-this-break": "./bin/cli.js"
+    "why-did-this-break": "./bin/cli.js",
+    "why-broke": "./bin/cli.js"
   },
   "type": "commonjs",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "node test/test.js",
     "start": "node bin/cli.js"
@@ -14,10 +23,12 @@
   "keywords": [
     "git",
     "stacktrace",
-    "debug",
+    "debugging",
     "blame",
     "bisect",
-    "root-cause"
+    "root-cause",
+    "cli",
+    "zero-dependency"
   ],
   "author": "",
   "license": "MIT"
