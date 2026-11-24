@@ -1,7 +1,7 @@
 {
   "name": "why-did-this-break",
   "version": "1.0.0",
-  "description": "Zero-dependency CLI that traces stack trace lines through Git history and ranks the most likely breaking commits.",
+  "description": "Zero-dependency Git debugging CLI that traces any stack trace through git blame & git log -L and ranks the most likely breaking commits.",
   "main": "src/index.js",
   "bin": {
     "why-did-this-break": "./bin/cli.js",
@@ -24,11 +24,17 @@
     "git",
     "stacktrace",
     "debugging",
-    "blame",
-    "bisect",
-    "root-cause",
+    "developer-tools",
+    "devtools",
     "cli",
-    "zero-dependency"
+    "git-blame",
+    "git-bisect",
+    "root-cause-analysis",
+    "crash-analysis",
+    "error-tracking",
+    "incident-response",
+    "nodejs",
+    "zero-dependencies"
   ],
   "author": "",
   "license": "MIT"

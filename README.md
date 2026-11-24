@@ -1,18 +1,22 @@
-# why-did-this-break
+# why-did-this-break — Git Stack Trace Root-Cause Finder
 
-Trace any stack trace directly back to the Git commit that most likely caused the crash — zero external dependencies.
+Stop running `git blame` and `git bisect` by hand across crash logs.
+**`why-did-this-break`** parses any stack trace, traces every frame through Git history (`git blame` + `git log -L`), and ranks the most likely breaking commits in seconds — with zero external dependencies.
 
-![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
-![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-blue)
+![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![Zero Dependencies](https://img.shields.io/badge/dependencies-0-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-## Usage
+## Installation & Quickstart
 
-Run directly with `npx`, pipe test/process output straight into `why-broke`, or point it at a saved crash log:
+Run instantly with `npx`, install globally (exposes both `why-did-this-break` and `why-broke`), or pipe failing test/process output straight in:
 
 ```bash
-# Run without installing via npx
+# Run immediately without installing
 npx why-did-this-break crash.log
+
+# Install globally
+npm install -g why-did-this-break
 
 # Pipe failing tests or server output directly
 npm test 2>&1 | why-broke
@@ -24,6 +28,18 @@ why-broke crash.log
 # Pass an inline stack trace string
 why-did-this-break "TypeError: Boom\n    at verifyToken (src/auth.js:6:26)"
 ```
+
+## Why `why-did-this-break`?
+
+| Capability | `why-did-this-break` | `git blame` | `git bisect` | `git log -L` |
+| :--- | :---: | :---: | :---: | :---: |
+| Accepts raw stack traces directly (file, pipe, string) | ✅ | ❌ | ❌ | ❌ |
+| Multi-frame scoring across crash origin & callers | ✅ | ❌ (1 line) | ❌ | ❌ (1 range) |
+| Zero repo checkouts or test re-runs required | ✅ | ✅ | ❌ (slow) | ✅ |
+| Ranked diff hunks + copy-pasteable quick actions | ✅ | ❌ | ❌ | Partial |
+| Zero external dependencies (`npx`-ready) | ✅ | Built-in | Built-in | Built-in |
+
+## Usage
 
 ### Flags
 
