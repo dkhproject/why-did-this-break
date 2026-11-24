@@ -1,0 +1,24 @@
+{
+  "name": "why-did-this-break",
+  "version": "1.0.0",
+  "description": "Smart git line tracer and suspect scoring engine for stack traces with zero dependencies",
+  "main": "src/index.js",
+  "bin": {
+    "why-did-this-break": "./bin/cli.js"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test/test.js",
+    "start": "node bin/cli.js"
+  },
+  "keywords": [
+    "git",
+    "stacktrace",
+    "debug",
+    "blame",
+    "bisect",
+    "root-cause"
+  ],
+  "author": "",
+  "license": "MIT"
+}
